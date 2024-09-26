@@ -1,0 +1,10 @@
+transforms:
+    # ======= "Interrupt enabled" enums
+    - !DeleteEnumsUsedIn
+      fieldsets: .*::regs::Inten(|set|clr)
+    - !MergeFieldsets
+      from: (.*)::regs::Inten.*
+      to: $1::regs::Inten
+
+    # ======= Cleanup
+    - !Sanitize {}

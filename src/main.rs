@@ -423,3 +423,36 @@ impl FromIterator<Config> for Config {
         Self { transforms }
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_generation_should_generate_stable_results() {
+        let mut fails = 0;
+        let expected_code = fs::read_to_string("src/test/gen_lib.rs")
+            .expect("Should be able to read the expected result");
+
+        let config: Config =
+            load_config("src/test/test.yaml").expect("Should be able to load transform");
+
+        let svd: svd_parser::svd::Device =
+            load_svd("src/test/test.svd").expect("Should be able to load svd");
+
+        for _ in 0..20 {
+            let result = gen_impl(&svd, &config.transforms);
+            let generated_code = result.expect("Unable to parse generate code").to_string();
+
+            if expected_code != generated_code {
+                fails += 1;
+                println!("!!!!!!!!!!!!!!!!!!!!!!!! FAILED");
+            }
+            println!("");
+            println!("");
+            println!("");
+        }
+        println!("Failures {fails}");
+        assert_eq!(0, fails);
+    }
+}
