@@ -4,6 +4,7 @@ use anyhow::{bail, Context, Result};
 use chiptool::{generate, svd2ir};
 use clap::Parser;
 use log::*;
+use proc_macro2::TokenStream;
 use regex::Regex;
 use std::collections::HashSet;
 use std::fs;
@@ -263,15 +264,24 @@ fn gen(args: Generate) -> Result<()> {
             .map(|s| load_config(&s))
             .collect::<Result<Config>>()?
     };
+    let svd: svd_parser::svd::Device = load_svd(&args.svd)?;
+    let items = gen_impl(&svd, &config.transforms).unwrap();
+    fs::write("lib.rs", items.to_string())?;
 
-    let svd = load_svd(&args.svd)?;
-    let mut ir = svd2ir::convert_svd(&svd)?;
+    Ok(())
+}
+
+fn gen_impl(
+    svd: &svd_parser::svd::Device,
+    transform_list: &Vec<chiptool::transform::Transform>,
+) -> Result<TokenStream> {
+    let mut ir = svd2ir::convert_svd(svd)?;
 
     // Fix weird newline spam in descriptions.
     let re = Regex::new("[ \n]+").unwrap();
     chiptool::transform::map_descriptions(&mut ir, |d| re.replace_all(d, " ").into_owned())?;
 
-    for t in &config.transforms {
+    for t in transform_list {
         info!("running: {:?}", t);
         t.run(&mut ir)?;
     }
@@ -279,10 +289,7 @@ fn gen(args: Generate) -> Result<()> {
     let generate_opts = generate::Options {
         common_module: generate::CommonModule::Builtin,
     };
-    let items = generate::render(&ir, &generate_opts).unwrap();
-    fs::write("lib.rs", items.to_string())?;
-
-    Ok(())
+    generate::render(&ir, &generate_opts)
 }
 
 fn transform(args: Transform) -> Result<()> {
