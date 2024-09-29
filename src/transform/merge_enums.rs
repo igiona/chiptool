@@ -1,6 +1,6 @@
 use log::*;
 use serde::{Deserialize, Serialize};
-use std::collections::HashSet;
+use std::collections::BTreeSet;
 
 use super::common::*;
 use crate::ir::*;
@@ -37,7 +37,7 @@ impl MergeEnums {
         Ok(())
     }
 
-    fn merge_enums(&self, ir: &mut IR, ids: HashSet<String>, to: String) -> anyhow::Result<()> {
+    fn merge_enums(&self, ir: &mut IR, ids: BTreeSet<String>, to: String) -> anyhow::Result<()> {
         let e = ir.enums.get(ids.iter().next().unwrap()).unwrap().clone();
 
         for id in &ids {

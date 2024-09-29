@@ -1,6 +1,6 @@
 use anyhow::bail;
 use serde::{Deserialize, Serialize};
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeSet, HashMap, HashSet};
 
 use crate::ir::*;
 
@@ -168,14 +168,14 @@ pub(crate) fn match_groups(
     set: impl Iterator<Item = String>,
     re: &regex::Regex,
     to: &str,
-) -> HashMap<String, HashSet<String>> {
-    let mut groups: HashMap<String, HashSet<String>> = HashMap::new();
+) -> HashMap<String, BTreeSet<String>> {
+    let mut groups: HashMap<String, BTreeSet<String>> = HashMap::new();
     for s in set {
         if let Some(to) = match_expand(&s, re, to) {
             if let Some(v) = groups.get_mut(&to) {
                 v.insert(s);
             } else {
-                let mut v = HashSet::new();
+                let mut v = BTreeSet::new();
                 v.insert(s);
                 groups.insert(to, v);
             }
@@ -191,7 +191,7 @@ pub(crate) fn match_expand(s: &str, regex: &regex::Regex, res: &str) -> Option<S
     Some(dst)
 }
 
-pub(crate) fn replace_enum_ids(ir: &mut IR, from: &HashSet<String>, to: String) {
+pub(crate) fn replace_enum_ids(ir: &mut IR, from: &BTreeSet<String>, to: String) {
     for (_, fs) in ir.fieldsets.iter_mut() {
         for f in fs.fields.iter_mut() {
             if let Some(id) = &mut f.enumm {
@@ -203,7 +203,7 @@ pub(crate) fn replace_enum_ids(ir: &mut IR, from: &HashSet<String>, to: String) 
     }
 }
 
-pub(crate) fn replace_fieldset_ids(ir: &mut IR, from: &HashSet<String>, to: String) {
+pub(crate) fn replace_fieldset_ids(ir: &mut IR, from: &BTreeSet<String>, to: String) {
     for (_, b) in ir.blocks.iter_mut() {
         for i in b.items.iter_mut() {
             if let BlockItemInner::Register(r) = &mut i.inner {
@@ -217,7 +217,7 @@ pub(crate) fn replace_fieldset_ids(ir: &mut IR, from: &HashSet<String>, to: Stri
     }
 }
 
-pub(crate) fn replace_block_ids(ir: &mut IR, from: &HashSet<String>, to: String) {
+pub(crate) fn replace_block_ids(ir: &mut IR, from: &BTreeSet<String>, to: String) {
     for (_, d) in ir.devices.iter_mut() {
         for p in d.peripherals.iter_mut() {
             if let Some(block) = &mut p.block {

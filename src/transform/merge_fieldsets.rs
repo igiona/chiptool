@@ -1,6 +1,6 @@
 use log::*;
 use serde::{Deserialize, Serialize};
-use std::collections::HashSet;
+use std::collections::BTreeSet;
 
 use super::common::*;
 use crate::ir::*;
@@ -24,7 +24,7 @@ impl MergeFieldsets {
             for id in &group {
                 info!("   {}", id);
             }
-            self.merge_fieldsets(ir, group, to, self.main.as_ref())?;
+            self.merge_fieldsets(ir, &group, to, self.main.as_ref())?;
         }
 
         Ok(())
@@ -33,7 +33,7 @@ impl MergeFieldsets {
     fn merge_fieldsets(
         &self,
         ir: &mut IR,
-        ids: HashSet<String>,
+        ids: &BTreeSet<String>,
         to: String,
         main: Option<&String>,
     ) -> anyhow::Result<()> {
@@ -49,17 +49,17 @@ impl MergeFieldsets {
         }
         let fs = ir.fieldsets.get(&main_id).unwrap().clone();
 
-        for id in &ids {
+        for id in ids {
             let fs2 = ir.fieldsets.get(id).unwrap();
             check_mergeable_fieldsets(&main_id, &fs, id, fs2, self.check)?;
         }
 
-        for id in &ids {
+        for id in ids {
             ir.fieldsets.remove(id);
         }
 
         assert!(ir.fieldsets.insert(to.clone(), fs).is_none());
-        replace_fieldset_ids(ir, &ids, to);
+        replace_fieldset_ids(ir, ids, to);
 
         Ok(())
     }
